@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        button {
+            padding: 12px 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            cursor: pointer;
+            width: 100%;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 FastAPI Web App</h1>
+        <p>Это мини-приложение работает на FastAPI!</p>
+        
+        <div>
+            <input type="text" id="messageInput" placeholder="Введите сообщение...">
+            <button onclick="sendToBot()">📤 Отправить боту</button>
+            <button onclick="getUserData()">📊 Получить данные</button>
+        </div>
+        
+        <div id="response"></div>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        async function sendToBot() {
+            const message = document.getElementById('messageInput').value;
+            const user = tg.initDataUnsafe.user;
+            
+            const data = {
+                user_id: user?.id,
+                message: message,
+                type: 'user_message',
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                const response = await fetch('/api/send-to-bot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                document.getElementById('response').innerHTML = 
+                    `<p style="color: green;">✅ ${result.status}</p>`;
+                    
+            } catch (error) {
+                document.getElementById('response').innerHTML = 
+                    `<p style="color: red;">❌ Ошибка: ${error}</p>`;
+            }
+        }
+        
+        async function getUserData() {
+            const user = tg.initDataUnsafe.user;
+            if (user) {
+                try {
+                    const response = await fetch(`/api/user-data/${user.id}`);
+                    const data = await response.json();
+                    document.getElementById('response').innerHTML = 
+                        `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        }
+        
+        tg.MainButton.setText("Готово").show();
+        tg.MainButton.onClick(() => {
+            tg.close();
+        });
+    </script>
+</body>
+</html>
